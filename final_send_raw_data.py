@@ -4,6 +4,7 @@ from time import sleep
 IPAddress = '192.168.2.40'
 port = 4196  # This is Final Port NOT 5000
 
+# following fuction is used to calculate the CRC16 for relay OFF of slaves
 def find_relay_off_crc(slave_id, on_change_data):
     function_code = f"05"
     if slave_id <= 9:
@@ -20,6 +21,7 @@ def find_relay_off_crc(slave_id, on_change_data):
         return f"{slave_id}{function_code}{read_input_data}{checksum}"
 
 
+# following fuction is used to calculate the CRC16 for relay ON of slaves
 def find_relay_on_crc(slave_id, on_change_data):
     function_code = f"05"
     if slave_id <= 9:
@@ -35,6 +37,8 @@ def find_relay_on_crc(slave_id, on_change_data):
         checksum = crc16(f"{slave_id}{function_code}{read_input_data}").replace(" ", "0")
         return f"{slave_id}{function_code}{read_input_data}{checksum}"
 
+
+# following fuction is used to calculate the CRC16 for slaves
 def find_slave_crc(slave_id):
     function_code = f"02"
     read_input_data = f"00000008"
@@ -46,6 +50,7 @@ def find_slave_crc(slave_id):
         return f"{slave_id}{function_code}{read_input_data}{checksum}"
 
 
+# following function is used to calculate the CRC16 (cheksum) for modbus
 def crc16(data, bits=8):
     crc = 0xFFFF
     for op, code in zip(data[0::2], data[1::2]):
@@ -60,6 +65,7 @@ def crc16(data, bits=8):
     return '{:2X}{:2X}'.format(lsb, msb)
 
 
+# following fuction is used to READ data on slaves
 def read_slaves(send_read_salve, slave_id):
     try:
         socket.send(bytes.fromhex(send_read_salve))
@@ -72,6 +78,7 @@ def read_slaves(send_read_salve, slave_id):
         pass
 
 
+# following fuction is used to ON relay on slaves
 def relay_on(send_on_relay, slave_id, on_change_data):
     try:
         socket.send(bytes.fromhex(send_on_relay))
@@ -84,6 +91,7 @@ def relay_on(send_on_relay, slave_id, on_change_data):
         pass
 
 
+# following fuction is used to OFF relay on slaves
 def relay_off(send_off_relay, slave_id, on_change_data):
     try:
         socket.send(bytes.fromhex(send_off_relay))
@@ -98,6 +106,7 @@ def relay_off(send_off_relay, slave_id, on_change_data):
 
 if __name__ == '__main__':
     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print("socket is open waiting for connection")
     socket.connect((IPAddress, port))
     print(f"connected successfully to {IPAddress} and port {port}")
@@ -107,18 +116,18 @@ if __name__ == '__main__':
     while True:
         try:
             for slave_id in range(1, connected_slaves + 1):
-                send_read_salve = find_slave_crc(slave_id)
-                read_slaves(send_read_salve, slave_id)
+                send_read_salve = find_slave_crc(slave_id) # calculate crc16 for slaves
+                read_slaves(send_read_salve, slave_id) # it is used to read data on slaves
                 for on_change_data in range(0, relay):
-                    send_on_relay = find_relay_on_crc(slave_id, on_change_data)
-                    relay_on(send_on_relay, slave_id, on_change_data)
+                    send_on_relay = find_relay_on_crc(slave_id, on_change_data) # calculate crc16 for relay on
+                    relay_on(send_on_relay, slave_id, on_change_data) # it is used to on relays on slaves
                     sleep(1)
             if slave_id == 4:
                 slave_id = 1
                 for slave_id in range(1, connected_slaves + 1):
                     for on_change_data in range(0, relay):
-                        send_off_relay = find_relay_off_crc(slave_id, on_change_data)
-                        relay_off(send_off_relay, slave_id, on_change_data)
+                        send_off_relay = find_relay_off_crc(slave_id, on_change_data) # calculate crc16 for relay ooff
+                        relay_off(send_off_relay, slave_id, on_change_data) # it is used to off relays on slaves
                         sleep(1)
                     slave_id = slave_id + 1
         except KeyboardInterrupt:
