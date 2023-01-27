@@ -106,7 +106,7 @@ def relay_off(send_off_relay, slave_id, on_change_data):
 
 if __name__ == '__main__':
     socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print("socket is open waiting for connection")
     socket.connect((IPAddress, port))
     print(f"connected successfully to {IPAddress} and port {port}")
@@ -121,14 +121,14 @@ if __name__ == '__main__':
                 for on_change_data in range(0, relay):
                     send_on_relay = find_relay_on_crc(slave_id, on_change_data) # calculate crc16 for relay on
                     relay_on(send_on_relay, slave_id, on_change_data) # it is used to on relays on slaves
-                    sleep(1)
+                    sleep(5)
             if slave_id == 4:
                 slave_id = 1
                 for slave_id in range(1, connected_slaves + 1):
                     for on_change_data in range(0, relay):
                         send_off_relay = find_relay_off_crc(slave_id, on_change_data) # calculate crc16 for relay ooff
                         relay_off(send_off_relay, slave_id, on_change_data) # it is used to off relays on slaves
-                        sleep(1)
+                        sleep(5)
                     slave_id = slave_id + 1
         except KeyboardInterrupt:
             print(f"Found KeyBoard Interrupt,so EXIT Code")
